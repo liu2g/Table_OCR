@@ -22,3 +22,4 @@ dependencies:
     - json5==0.9.8
     - tensorflow==2.10.0
     - sklearn==0.0
+    - matplotlib
