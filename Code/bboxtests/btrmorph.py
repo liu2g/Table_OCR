@@ -33,14 +33,10 @@ class BtrMorph(predict):
         letters = []
         image_orig = cv2.imread(img)
         image_gray = cv2.cvtColor(image_orig, cv2.COLOR_BGR2GRAY)
-        image_bin = cv2.adaptiveThreshold(image_gray, 255,
-                                        cv2.ADAPTIVE_THRESH_MEAN_C,
-                                        cv2.THRESH_BINARY_INV,
-                                        9, 20)
-        image_bin = self.remove_lines(image_bin)
-        image_bin = cv2.morphologyEx(image_bin, cv2.MORPH_TOPHAT,
-                                     np.ones((2, 2), np.uint8)
-                                     )
+        _, image_bin = cv2.threshold(image_gray, 0, 255,
+                                  cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+        image_bin = cv2.erode(image_bin, np.ones((2, 2), np.uint8), iterations=1)
+        image_bin = cv2.dilate(image_bin, np.ones((3, 3), np.uint8), iterations=1)
         bounding_boxes = []
         analysis = cv2.connectedComponentsWithStats(image_bin, 4, cv2.CV_32S)
         (totalLabels, label_ids, values, centroid) = analysis
@@ -66,7 +62,7 @@ class BtrMorph(predict):
 
                 # Bounding boxes for each component
                 cv2.rectangle(new_img, pt1, pt2, (0, 255, 0), 3)
-        show_img(new_img)
+        # show_img(new_img)
         if len(bounding_boxes) > 0:
             bounding_boxes = self._sort_bounding_boxes(bounding_boxes)
             box_expand = 2

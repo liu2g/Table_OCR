@@ -50,7 +50,6 @@ class ErodeDilate(predict):
 
                 # Bounding boxes for each component
                 cv2.rectangle(new_img, pt1, pt2, (0, 255, 0), 3)
-        show_img(new_img)
         if len(bounding_boxes) > 0:
             bounding_boxes = self._sort_bounding_boxes(bounding_boxes)
             box_expand = 2
