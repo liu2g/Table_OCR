@@ -14,6 +14,8 @@ class Vanilla(predict):
     - Dilate once
     - Find contours
     """
+    def get_letters(self, img, line_thickness):
+        return super().get_letters(img, line_thickness)
 
 args = sys.argv[1:]
 if not args:

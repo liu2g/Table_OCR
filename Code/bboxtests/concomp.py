@@ -14,34 +14,22 @@ def show_img(img, title=None):
     if cv2.waitKey(0):
         cv2.destroyAllWindows()
 
-
-class BtrMorph(predict):
-    @staticmethod
-    def remove_lines(img):
-        hkernel = cv2.getStructuringElement(cv2.MORPH_RECT, (25, 1))
-        hline = cv2.erode(img, hkernel, iterations=1)
-        img = img - hline
-        vkernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, 25))
-        vline = cv2.erode(img, vkernel, iterations=1)
-        img = img - vline
-        return img
-
+class ConComp(predict):
     def _sort_bounding_boxes(self, bounding_boxes):
         sorted_bounding_boxes = sorted(bounding_boxes, key=lambda x:x[0])
         return sorted_bounding_boxes
     def get_letters(self, img, line_thickness):
         letters = []
-        image_orig = cv2.imread(img)
-        image_gray = cv2.cvtColor(image_orig, cv2.COLOR_BGR2GRAY)
-        _, image_bin = cv2.threshold(image_gray, 0, 255,
-                                  cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
-        image_bin = cv2.erode(image_bin, np.ones((2, 2), np.uint8), iterations=1)
-        image_bin = cv2.dilate(image_bin, np.ones((3, 3), np.uint8), iterations=1)
+        image = cv2.imread(img)
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        ret, thresh1 = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY_INV)
+        eroded = cv2.erode(thresh1, np.ones((2, 2), np.uint8), iterations=1)
+        dilated = cv2.dilate(eroded, np.ones((3, 3), np.uint8), iterations=1)
         bounding_boxes = []
-        analysis = cv2.connectedComponentsWithStats(image_bin, 4, cv2.CV_32S)
+        analysis = cv2.connectedComponentsWithStats(dilated, 4, cv2.CV_32S)
         (totalLabels, label_ids, values, centroid) = analysis
         # Loop through each component
-        new_img = image_orig.copy()
+        new_img = image.copy()
         for i in range(1, totalLabels):
 
             # Area of the component
@@ -62,24 +50,23 @@ class BtrMorph(predict):
 
                 # Bounding boxes for each component
                 cv2.rectangle(new_img, pt1, pt2, (0, 255, 0), 3)
-        # show_img(new_img)
         if len(bounding_boxes) > 0:
             bounding_boxes = self._sort_bounding_boxes(bounding_boxes)
             box_expand = 2
             for box in bounding_boxes:
                 (x, y, w, h) = box
-                roi = image_gray[(y - box_expand):(y + h + box_expand),
+                roi = gray[(y - box_expand):(y + h + box_expand),
                       (x - box_expand):(x + w + box_expand)]
-                image_bin = cv2.threshold(roi, 0, 255,
+                thresh = cv2.threshold(roi, 0, 255,
                                        cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)[
                     1]
                 try:
-                    image_bin = cv2.resize(image_bin, (32, 32),
+                    thresh = cv2.resize(thresh, (32, 32),
                                         interpolation=cv2.INTER_CUBIC)
-                    image_bin = image_bin.astype("float32") / 255.0
-                    image_bin = np.expand_dims(image_bin, axis=-1)
-                    image_bin = image_bin.reshape(1, 32, 32, 1)
-                    ypred = self._model.predict(image_bin, verbose=0)
+                    thresh = thresh.astype("float32") / 255.0
+                    thresh = np.expand_dims(thresh, axis=-1)
+                    thresh = thresh.reshape(1, 32, 32, 1)
+                    ypred = self._model.predict(thresh, verbose=0)
                     ypred = self._LB.inverse_transform(ypred)
                     [x] = self._hex_to_char(ypred)
                     letters.append(x)
@@ -92,5 +79,5 @@ args = sys.argv[1:]
 if not args:
     raise Exception("No directory given")
 root_dir = args[0]
-result_file = bboxbenchmark(BtrMorph, root_dir)
+result_file = bboxbenchmark(ConComp, root_dir)
 get_metrics(root_dir + "/" + result_file)
