@@ -23,6 +23,7 @@ def show_img(img):
 
 
 def demo_vanilla(img):
+    alpha = 0.8
     img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     _, img_bin = cv2.threshold(img_gray, 127, 255, cv2.THRESH_BINARY_INV)
     img_bin = cv2.dilate(img_bin, None, iterations=1)
