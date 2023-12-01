@@ -98,6 +98,7 @@ def demo_histsplit(img):
     ax_row = fig.add_subplot(gs[1, 0], adjustable='datalim', sharex=ax_void)
     remove_axis_annotate(ax_row)
     ax_row.set_ylim([h, 0])
+    ax_row.set_xlim([1, -1E-2])
     ax_img = fig.add_subplot(gs[1, 1], aspect=h/w)
     remove_axis_annotate(ax_img)
     _, image_bin = cv2.threshold(image_gray, 0, 255,
@@ -109,8 +110,10 @@ def demo_histsplit(img):
     image_bin = skimage.morphology.area_opening(image_bin)
     sum_each_row = np.sum(image_bin > 0, axis=1)
     sum_each_column = np.sum(image_bin > 0, axis=0)
-    ax_row.plot(1 - sum_each_row / np.max(sum_each_row), np.arange(h))
+    ax_row.plot(sum_each_row / np.max(sum_each_row), np.arange(h))
+    ax_row.fill_betweenx(np.arange(h), sum_each_row / np.max(sum_each_row))
     ax_col.plot(np.arange(w), sum_each_column / np.max(sum_each_row))
+    ax_col.fill_between(np.arange(w), sum_each_column / np.max(sum_each_row))
     xbounds = []
     bound = []
     for i, r in enumerate(sum_each_row):
